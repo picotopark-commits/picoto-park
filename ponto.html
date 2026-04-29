@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>Ponto</title>
 
-  <!-- QR -->
   <script src="https://unpkg.com/html5-qrcode"></script>
 
   <style>
@@ -51,13 +50,8 @@
       cursor: pointer;
     }
 
-    .entrada-btn {
-      background: #2ecc71;
-    }
-
-    .saida-btn {
-      background: #e74c3c;
-    }
+    .entrada-btn { background: #2ecc71; }
+    .saida-btn { background: #e74c3c; }
 
     #reader {
       margin-top: 15px;
@@ -134,25 +128,17 @@ function arredondarHora(data) {
   return new Date(data.getFullYear(), data.getMonth(), data.getDate(), h, m);
 }
 
-// 🔥 CORRIGIDO PARA FUNCIONAR NO GITHUB PAGES
+// 🔥 ENVIO PARA SHEETS
 async function enviarParaSheets(dados) {
-  try {
-    await fetch(SCRIPT_URL, {
-      method: "POST",
-      mode: "no-cors", // 🔥 ESSENCIAL
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(dados)
-    });
-
-    console.log("Enviado para Sheets:", dados);
-
-  } catch (err) {
-    console.error("Erro ao enviar:", err);
-  }
+  await fetch(SCRIPT_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(dados)
+  });
 }
 
+// QR
 function lerQRReal() {
   return new Promise((resolve) => {
 
@@ -208,7 +194,7 @@ async function carregarNome() {
   document.getElementById("nome").innerText = nome;
 }
 
-// 🔥 ENTRADA
+// ✅ ENTRADA (NÃO ENVIA PARA SHEETS)
 window.entradaFunc = async function () {
   if (entrada) return;
 
@@ -220,18 +206,10 @@ window.entradaFunc = async function () {
 
   await setDoc(doc(db, "users", user.uid, "turnos", hoje()), { entrada: now });
 
-  await enviarParaSheets({
-    nome,
-    data: hoje(),
-    entrada: formatarHora(now),
-    saida: "",
-    horas: 0
-  });
-
   await carregar();
 }
 
-// 🔥 SAÍDA
+// ✅ SAÍDA (ENVIA TUDO JUNTO)
 window.saidaFunc = async function () {
   if (!entrada || saida) return;
 
@@ -241,25 +219,22 @@ window.saidaFunc = async function () {
   const user = auth.currentUser;
   const now = arredondarHora(new Date());
 
-  const horas = ((now - entrada) / 3600000).toFixed(2);
-
   await setDoc(doc(db, "users", user.uid, "turnos", hoje()), {
-    saida: now,
-    horas: Number(horas)
+    saida: now
   }, { merge: true });
 
+  // 🔥 ENVIA UMA ÚNICA LINHA
   await enviarParaSheets({
     nome,
     data: hoje(),
     entrada: formatarHora(entrada),
     saida: formatarHora(now),
-    horas
+    horas: "" // vazio (ou mete 0 se quiseres)
   });
 
   await carregar();
 }
 
-// 🔥 ESPERAR LOGIN
 auth.onAuthStateChanged(async (user) => {
   if (user) {
     await carregarNome();
