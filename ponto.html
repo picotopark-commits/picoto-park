@@ -134,12 +134,23 @@ function arredondarHora(data) {
   return new Date(data.getFullYear(), data.getMonth(), data.getDate(), h, m);
 }
 
+// 🔥 CORRIGIDO PARA FUNCIONAR NO GITHUB PAGES
 async function enviarParaSheets(dados) {
-  await fetch(SCRIPT_URL, {
-    method: "POST",
-    body: JSON.stringify(dados),
-    headers: { "Content-Type": "application/json" }
-  });
+  try {
+    await fetch(SCRIPT_URL, {
+      method: "POST",
+      mode: "no-cors", // 🔥 ESSENCIAL
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(dados)
+    });
+
+    console.log("Enviado para Sheets:", dados);
+
+  } catch (err) {
+    console.error("Erro ao enviar:", err);
+  }
 }
 
 function lerQRReal() {
@@ -197,6 +208,7 @@ async function carregarNome() {
   document.getElementById("nome").innerText = nome;
 }
 
+// 🔥 ENTRADA
 window.entradaFunc = async function () {
   if (entrada) return;
 
@@ -219,6 +231,7 @@ window.entradaFunc = async function () {
   await carregar();
 }
 
+// 🔥 SAÍDA
 window.saidaFunc = async function () {
   if (!entrada || saida) return;
 
@@ -246,6 +259,7 @@ window.saidaFunc = async function () {
   await carregar();
 }
 
+// 🔥 ESPERAR LOGIN
 auth.onAuthStateChanged(async (user) => {
   if (user) {
     await carregarNome();
