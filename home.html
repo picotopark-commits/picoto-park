@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Arial;
+      display: flex;
+
+      /* 🔥 FUNDO */
+      background:
+        linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)),
+        url("https://www.montepio.org/wp-content/uploads/2018/03/destaque_pikoto.jpg");
+
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+    }
+
+    /* 🔥 SIDEBAR */
+    .sidebar {
+      width: 230px;
+      height: 100vh;
+      padding: 20px 10px;
+
+      background:
+        linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.9)),
+        url("https://cdn1.yumping.com/emp/fotos/48/E/019759743/640/e-19759743-escalando-el-rocodromo1644241406432.jpg");
+
+      background-size: cover;
+      background-position: center;
+
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+
+      backdrop-filter: blur(5px);
+    }
+
+    .logo {
+      width: 110px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    }
+
+    .sidebar h3 {
+      margin-bottom: 20px;
+    }
+
+    .menu-item {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .menu-item:hover {
+      background: rgba(255,255,255,0.2);
+      transform: translateX(5px);
+    }
+
+    /* 🔥 MAIN */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(5px);
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #nome {
+      font-weight: 500;
+      font-size: 16px;
+    }
+
+    /* 🔥 BOTÕES */
+    .top-buttons button {
+      margin-left: 10px;
+      padding: 8px 15px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: 0.3s;
+    }
+
+    .perfil-btn {
+      background: #6200ea;
+      color: white;
+    }
+
+    .perfil-btn:hover {
+      background: #4b00c4;
+    }
+
+    .logout-btn {
+      background: #e53935;
+      color: white;
+    }
+
+    .logout-btn:hover {
+      background: #c62828;
+    }
+
+    /* 🔥 IFRAME (SEM FUNDO BRANCO) */
+    iframe {
+      width: 100%;
+      height: calc(100vh - 70px);
+      border: none;
+      background: transparent;
+    }
+
+  </style>
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+
+  <!-- 🔥 LOGO -->
+  <img 
+    src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTkGOA7xOuMQwRvrKUVjMUOz77gDeOkWJRYew&s"
+    class="logo"
+  >
+
+  <h3>Picoto Park</h3>
+
+  <div class="menu-item" onclick="abrir('ponto.html')">⏱️ Ponto</div>
+  <div class="menu-item" onclick="abrir('historico.html')">📅 Histórico</div>
+  <div class="menu-item" onclick="abrir('graficos.html')">📊 Gráficos</div>
+  <div class="menu-item" onclick="abrir('planificacao.html')">🖼️ Plano</div>
+  <div class="menu-item" onclick="abrir('avisos.html')">⚠️ Avisos</div>
+
+</div>
+
+<!-- CONTEÚDO -->
+<div class="main">
+
+  <header>
+    <span id="nome">Olá, Utilizador</span>
+
+    <div class="top-buttons">
+      <button class="perfil-btn" onclick="perfil()">👤 Perfil</button>
+      <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+    </div>
+  </header>
+
+  <iframe id="frame" src="ponto.html"></iframe>
+
+</div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyB3IN8jxN7HZsN8ZyfHXlZBu5wxqTxgho8",
+  authDomain: "picoto-park.firebaseapp.com",
+  projectId: "picoto-park",
+  storageBucket: "picoto-park.firebasestorage.app",
+  messagingSenderId: "984525425586",
+  appId: "1:984525425586:web:b7f3c6a8bffc392844f2ab"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// 🔥 NOME DO UTILIZADOR
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    window.location.href = "login.html";
+    return;
+  }
+
+  const ref = doc(db, "users", user.uid);
+  const snap = await getDoc(ref);
+
+  if (snap.exists()) {
+    document.getElementById("nome").innerText =
+      "Olá, " + (snap.data().nome || "Utilizador");
+  }
+});
+
+// 🔁 TROCAR PÁGINA
+window.abrir = function(pagina) {
+  document.getElementById("frame").src = pagina;
+}
+
+// 👤 PERFIL
+window.perfil = function() {
+  document.getElementById("frame").src = "perfil.html";
+}
+
+// 🚪 LOGOUT
+window.logout = async function() {
+  await signOut(auth);
+  window.location.href = "login.html";
+}
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Planificação</title>
+
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      padding: 20px;
+      margin: 0;
+      color: white;
+
+      /* 🔥 FUNDO */
+      background: 
+        linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)),
+        url("https://www.montepio.org/wp-content/uploads/2018/03/destaque_pikoto.jpg");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+    }
+
+    /* 🔥 CAIXA DO TÍTULO */
+    .top-box {
+      background: rgba(0,0,0,0.5);
+      padding: 20px;
+      border-radius: 15px;
+      display: inline-block;
+      margin-bottom: 20px;
+      backdrop-filter: blur(5px);
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 28px;
+      text-shadow: 2px 2px 8px rgba(0,0,0,0.9);
+    }
+
+    button {
+      padding: 10px 20px;
+      margin-top: 10px;
+      background: #1976d2;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: #0d47a1;
+      transform: scale(1.05);
+    }
+
+    #grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      border-radius: 12px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- 🔥 TÍTULO MELHORADO -->
+  <div class="top-box">
+    <h2>Planificação</h2>
+
+    <!-- BOTÃO -->
+    <br>
+    <button onclick="document.getElementById('fileInput').click()">
+      Adicionar
+    </button>
+  </div>
+
+  <!-- INPUT ESCONDIDO -->
+  <input 
+    type="file" 
+    id="fileInput" 
+    accept="image/*" 
+    style="display:none"
+    onchange="adicionarImagem(event)"
+  />
+
+  <!-- GRID -->
+  <div id="grid"></div>
+
+  <script>
+    let imagens = [];
+
+    function adicionarImagem(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const url = URL.createObjectURL(file);
+
+      imagens.push(url);
+      renderizar();
+    }
+
+    function renderizar() {
+      const grid = document.getElementById("grid");
+      grid.innerHTML = "";
+
+      imagens.forEach((img) => {
+        const el = document.createElement("img");
+        el.src = img;
+        grid.appendChild(el);
+      });
+    }
+  </script>
+
+</body>
+</html>

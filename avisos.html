@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Avisos ⚠️</title>
+
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial;
+      background: transparent; /* 🔥 IMPORTANTE */
+      margin: 0;
+      color: white;
+    }
+
+    /* 🔥 HEADER TRANSPARENTE */
+    header {
+      background: rgba(0,0,0,0.4);
+      backdrop-filter: blur(10px);
+      padding: 15px;
+      font-size: 20px;
+      color: white;
+    }
+
+    .container {
+      padding: 20px;
+    }
+
+    /* 🔥 CARD TRANSPARENTE */
+    .card {
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+
+      margin: 15px 0;
+      padding: 15px;
+      border-radius: 12px;
+
+      border: 1px solid rgba(255,255,255,0.2);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+
+    img {
+      width: 100%;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+
+    p {
+      margin: 0;
+    }
+
+    /* 🔥 BOTÃO FLOAT */
+    .fab {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: orange;
+      border: none;
+      padding: 15px;
+      border-radius: 50%;
+      font-size: 20px;
+      cursor: pointer;
+      color: white;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+      transition: 0.3s;
+    }
+
+    .fab:hover {
+      transform: scale(1.1);
+      background: #ff9800;
+    }
+
+  </style>
+</head>
+
+<body>
+
+<header>Avisos ⚠️</header>
+
+<div class="container" id="avisos"></div>
+
+<button class="fab" onclick="abrirForm()">⚠️</button>
+
+<!-- 🔥 FIREBASE MODULAR -->
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+
+// 🔥 CONFIG
+const firebaseConfig = {
+  apiKey: "AIzaSyB3IN8jxN7HZsN8ZyfHXlZBu5wxqTxgho8",
+  authDomain: "picoto-park.firebaseapp.com",
+  projectId: "picoto-park",
+  storageBucket: "picoto-park.firebasestorage.app",
+  messagingSenderId: "984525425586",
+  appId: "1:984525425586:web:b7f3c6a8bffc392844f2ab",
+  measurementId: "G-NXNJ8JG5F2"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+// 📥 Adicionar aviso
+window.abrirForm = function () {
+  const descricao = prompt("Descrição do aviso:");
+  if (!descricao) return;
+
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "image/*";
+
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const nome = Date.now() + ".jpg";
+    const storageRef = ref(storage, "avisos/" + nome);
+
+    await uploadBytes(storageRef, file);
+    const url = await getDownloadURL(storageRef);
+
+    await addDoc(collection(db, "avisos"), {
+      imagem: url,
+      descricao: descricao,
+      data: new Date()
+    });
+  };
+
+  input.click();
+};
+
+// 📡 Listar avisos
+const q = query(collection(db, "avisos"), orderBy("data", "desc"));
+
+onSnapshot(q, (snapshot) => {
+  const container = document.getElementById("avisos");
+  container.innerHTML = "";
+
+  snapshot.forEach((doc) => {
+    const data = doc.data();
+
+    const card = document.createElement("div");
+    card.className = "card";
+
+    card.innerHTML = `
+      <img src="${data.imagem}" />
+      <p>${data.descricao || ""}</p>
+    `;
+
+    container.appendChild(card);
+  });
+});
+
+</script>
+
+</body>
+</html>

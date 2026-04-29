@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Histórico 📅</title>
+
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial;
+      background: transparent; /* 🔥 IMPORTANTE */
+      margin: 0;
+      color: white;
+    }
+
+    /* 🔥 HEADER TRANSPARENTE */
+    header {
+      background: rgba(0,0,0,0.4);
+      backdrop-filter: blur(10px);
+      color: white;
+      padding: 15px;
+      font-size: 20px;
+    }
+
+    .container {
+      padding: 20px;
+    }
+
+    /* 🔥 CARD TRANSPARENTE */
+    .card {
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+
+      margin: 10px 0;
+      padding: 15px;
+      border-radius: 12px;
+
+      border: 1px solid rgba(255,255,255,0.2);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+
+    .card strong {
+      font-size: 16px;
+    }
+
+  </style>
+</head>
+
+<body>
+
+<header>Histórico 📅</header>
+
+<div class="container" id="lista"></div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+// 🔥 CONFIG
+const firebaseConfig = {
+  apiKey: "AIzaSyB3IN8jxN7HZsN8ZyfHXlZBu5wxqTxgho8",
+  authDomain: "picoto-park.firebaseapp.com",
+  projectId: "picoto-park",
+  storageBucket: "picoto-park.firebasestorage.app",
+  messagingSenderId: "984525425586",
+  appId: "1:984525425586:web:b7f3c6a8bffc392844f2ab"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+// 🕐 FORMATAR HORA
+function formatar(timestamp) {
+  if (!timestamp) return "--:--";
+
+  const d = timestamp.toDate();
+  return d.getHours().toString().padStart(2, '0') + ":" +
+         d.getMinutes().toString().padStart(2, '0');
+}
+
+// 📡 HISTÓRICO EM TEMPO REAL
+auth.onAuthStateChanged(user => {
+
+  if (!user) {
+    alert("Precisas de login");
+    return;
+  }
+
+  const ref = collection(db, "users", user.uid, "turnos");
+
+  onSnapshot(ref, (snapshot) => {
+
+    const lista = document.getElementById("lista");
+    lista.innerHTML = "";
+
+    const docs = snapshot.docs.sort((a, b) => b.id.localeCompare(a.id));
+
+    if (docs.length === 0) {
+      lista.innerHTML = "<p style='color:#ddd'>Sem histórico</p>";
+      return;
+    }
+
+    docs.forEach(doc => {
+
+      const data = doc.data();
+
+      const entrada = formatar(data.entrada);
+      const saida = formatar(data.saida);
+      const horas = data.horas != null ? Number(data.horas).toFixed(2) : "--";
+
+      const card = document.createElement("div");
+      card.className = "card";
+
+      card.innerHTML = `
+        <strong>📅 ${doc.id}</strong><br>
+        Entrada: ${entrada}<br>
+        Saída: ${saida}<br>
+        Horas: ${horas}
+      `;
+
+      lista.appendChild(card);
+    });
+
+  });
+
+});
+
+</script>
+
+</body>
+</html>

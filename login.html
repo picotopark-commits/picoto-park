@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Login</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial;
+
+      /* 🔥 IMAGEM DE FUNDO */
+      background: 
+        linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)),
+        url('https://bragacool.com/sites/default/files/styles/ny_article_horizontal__w720xh480_watermark/public/imagens/galeria/_14.jpg?itok=Mo2vPVtv');
+      background-size: cover;
+      background-position: center;
+
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    /* 🔥 CAIXA CENTRAL */
+    .login-box {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      padding: 40px;
+      border-radius: 20px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    /* 🔥 BOTÃO */
+    button {
+      padding: 15px 25px;
+      font-size: 16px;
+      cursor: pointer;
+      border: none;
+      background: #4285F4;
+      color: white;
+      border-radius: 10px;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: #3367d6;
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="login-box">
+  <button onclick="loginGoogle()">Entrar com Google</button>
+</div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+// 🔥 CONFIG
+const firebaseConfig = {
+  apiKey: "AIzaSyB3IN8jxN7HZsN8ZyfHXlZBu5wxqTxgho8",
+  authDomain: "picoto-park.firebaseapp.com",
+  projectId: "picoto-park",
+  storageBucket: "picoto-park.firebasestorage.app",
+  messagingSenderId: "984525425586",
+  appId: "1:984525425586:web:b7f3c6a8bffc392844f2ab"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+// 🔥 LOGIN GOOGLE (INALTERADO)
+window.loginGoogle = async function () {
+  const provider = new GoogleAuthProvider();
+
+  try {
+    await signInWithPopup(auth, provider);
+
+    // 🔥 REDIRECIONA PARA HOME
+    window.location.href = "home.html";
+
+  } catch (e) {
+    alert("Erro no login");
+    console.error(e);
+  }
+};
+
+</script>
+
+</body>
+</html>

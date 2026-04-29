@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Ponto</title>
+
+  <!-- QR -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial;
+      background: transparent;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(12px);
+      padding: 30px;
+      border-radius: 20px;
+      text-align: center;
+      color: white;
+      width: 320px;
+    }
+
+    .horas {
+      display: flex;
+      justify-content: space-between;
+      margin: 20px 0;
+    }
+
+    .box {
+      background: rgba(255,255,255,0.2);
+      padding: 15px;
+      border-radius: 10px;
+      width: 45%;
+    }
+
+    button {
+      width: 45%;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .entrada-btn {
+      background: #2ecc71;
+    }
+
+    .saida-btn {
+      background: #e74c3c;
+    }
+
+    #reader {
+      margin-top: 15px;
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="card">
+  <h2>Turno de Hoje</h2>
+  <div>(<span id="nome">...</span>)</div>
+
+  <div class="horas">
+    <div class="box">
+      <span>Entrada</span><br>
+      <strong id="entrada">--</strong>
+    </div>
+
+    <div class="box">
+      <span>Saída</span><br>
+      <strong id="saida">--</strong>
+    </div>
+  </div>
+
+  <div class="horas">
+    <button class="entrada-btn" onclick="entradaFunc()">Entrada</button>
+    <button class="saida-btn" onclick="saidaFunc()">Saída</button>
+  </div>
+
+  <div id="reader"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyB3IN8jxN7HZsN8ZyfHXlZBu5wxqTxgho8",
+  authDomain: "picoto-park.firebaseapp.com",
+  projectId: "picoto-park",
+  storageBucket: "picoto-park.firebasestorage.app",
+  messagingSenderId: "984525425586",
+  appId: "1:984525425586:web:b7f3c6a8bffc392844f2ab"
+};
+
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxpDabAQ6xNSyQjTLbe84xUv6AL8P1_kZILGf2v96rgusNwABw4BW85ZDc9f8tq7ouH8g/exec";
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let entrada = null;
+let saida = null;
+let nome = "Utilizador";
+
+function hoje() {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+}
+
+function formatarHora(d) {
+  if (!d) return "--";
+  return d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+}
+
+function arredondarHora(data) {
+  let total = data.getHours()*60 + data.getMinutes();
+  let ajustado = Math.round(total / 30) * 30;
+  let h = Math.floor(ajustado / 60);
+  let m = ajustado % 60;
+  return new Date(data.getFullYear(), data.getMonth(), data.getDate(), h, m);
+}
+
+async function enviarParaSheets(dados) {
+  await fetch(SCRIPT_URL, {
+    method: "POST",
+    body: JSON.stringify(dados),
+    headers: { "Content-Type": "application/json" }
+  });
+}
+
+function lerQRReal() {
+  return new Promise((resolve) => {
+
+    const qr = document.getElementById("reader");
+    qr.style.display = "block";
+
+    const scanner = new Html5Qrcode("reader");
+
+    scanner.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: 250 },
+      (text) => {
+        scanner.stop();
+        qr.style.display = "none";
+
+        if (text === "ACESSO_EMPRESA_123") {
+          resolve(true);
+        } else {
+          alert("QR inválido");
+          resolve(false);
+        }
+      }
+    );
+  });
+}
+
+async function carregar() {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  const ref = doc(db, "users", user.uid, "turnos", hoje());
+  const snap = await getDoc(ref);
+
+  if (snap.exists()) {
+    const d = snap.data();
+    entrada = d.entrada?.toDate();
+    saida = d.saida?.toDate();
+  }
+
+  document.getElementById("entrada").innerText = formatarHora(entrada);
+  document.getElementById("saida").innerText = formatarHora(saida);
+}
+
+async function carregarNome() {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  const snap = await getDoc(doc(db, "users", user.uid));
+  if (snap.exists()) {
+    nome = snap.data().nome || "Utilizador";
+  }
+
+  document.getElementById("nome").innerText = nome;
+}
+
+window.entradaFunc = async function () {
+  if (entrada) return;
+
+  const ok = await lerQRReal();
+  if (!ok) return;
+
+  const user = auth.currentUser;
+  const now = arredondarHora(new Date());
+
+  await setDoc(doc(db, "users", user.uid, "turnos", hoje()), { entrada: now });
+
+  await enviarParaSheets({
+    nome,
+    data: hoje(),
+    entrada: formatarHora(now),
+    saida: "",
+    horas: 0
+  });
+
+  await carregar();
+}
+
+window.saidaFunc = async function () {
+  if (!entrada || saida) return;
+
+  const ok = await lerQRReal();
+  if (!ok) return;
+
+  const user = auth.currentUser;
+  const now = arredondarHora(new Date());
+
+  const horas = ((now - entrada) / 3600000).toFixed(2);
+
+  await setDoc(doc(db, "users", user.uid, "turnos", hoje()), {
+    saida: now,
+    horas: Number(horas)
+  }, { merge: true });
+
+  await enviarParaSheets({
+    nome,
+    data: hoje(),
+    entrada: formatarHora(entrada),
+    saida: formatarHora(now),
+    horas
+  });
+
+  await carregar();
+}
+
+auth.onAuthStateChanged(async (user) => {
+  if (user) {
+    await carregarNome();
+    await carregar();
+  }
+});
+</script>
+
+</body>
+</html>
