@@ -14,7 +14,6 @@ body {
   color: white;
 }
 
-/* 🔥 TÍTULO BONITO */
 .titulo {
   font-size: 40px;
   font-weight: bold;
@@ -22,7 +21,6 @@ body {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin-bottom: 20px;
-  text-shadow: 2px 2px 10px rgba(0,0,0,0.5);
 }
 
 #grid {
@@ -57,7 +55,6 @@ body {
   right: 5px;
 }
 
-/* botão */
 .add-btn {
   padding: 12px 25px;
   background: linear-gradient(45deg, #1976d2, #42a5f5);
@@ -69,15 +66,7 @@ body {
   margin-top: 10px;
 }
 
-/* input */
-input[type="text"] {
-  padding: 10px;
-  width: 250px;
-  border-radius: 10px;
-  border: none;
-}
-
-/* 🔍 MODAL */
+/* MODAL */
 #modal {
   display: none;
   position: fixed;
@@ -93,7 +82,6 @@ input[type="text"] {
 #modal img {
   max-width: 90%;
   max-height: 90%;
-  border-radius: 10px;
 }
 
 #modal span {
@@ -112,14 +100,13 @@ input[type="text"] {
 
 <input type="text" id="descricaoInput" placeholder="Escreve uma descrição...">
 
-<br>
+<br><br>
 
 <button id="addBtn" class="add-btn" onclick="fileInput.click()">+ Adicionar</button>
 <input type="file" id="fileInput" hidden>
 
 <div id="grid"></div>
 
-<!-- 🔍 MODAL -->
 <div id="modal">
   <span onclick="fecharModal()">✖</span>
   <img id="imgGrande">
@@ -127,15 +114,10 @@ input[type="text"] {
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { 
-  getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc 
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-import { 
-  getAuth, onAuthStateChanged 
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
-/* 🔑 CONFIG FIREBASE */
+/* 🔑 CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyB3IN8jxN7HZsN8ZyfHXlZBu5wxqTxgho8",
   authDomain: "picoto-park.firebaseapp.com",
@@ -149,20 +131,21 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-/* 🔐 CONTROLO DE LOGIN */
-let userLogado = false;
+/* 🔐 ADMIN EMAIL */
+const ADMIN_EMAIL = "picotopark@gmail.com";
+let isAdmin = false;
 
 onAuthStateChanged(auth, (user) => {
-  if (user) {
-    userLogado = true;
+  if (user && user.email === ADMIN_EMAIL) {
+    isAdmin = true;
     document.getElementById("addBtn").style.display = "inline-block";
   } else {
-    userLogado = false;
+    isAdmin = false;
     document.getElementById("addBtn").style.display = "none";
   }
 });
 
-/* ☁️ CLOUDINARY */
+/* CLOUDINARY */
 const CLOUD_NAME = "dhocrzi6t";
 const UPLOAD_PRESET = "flutter_upload";
 
@@ -171,7 +154,7 @@ const fileInput = document.getElementById("fileInput");
 const descricaoInput = document.getElementById("descricaoInput");
 const modal = document.getElementById("modal");
 
-/* 🔄 TEMPO REAL */
+/* TEMPO REAL */
 onSnapshot(collection(db, "avisos"), (snapshot) => {
   grid.innerHTML = "";
 
@@ -181,9 +164,9 @@ onSnapshot(collection(db, "avisos"), (snapshot) => {
   });
 });
 
-/* ➕ UPLOAD */
+/* UPLOAD */
 fileInput.addEventListener("change", async (event) => {
-  if (!userLogado) return;
+  if (!isAdmin) return;
 
   const file = event.target.files[0];
   if (!file) return;
@@ -210,7 +193,7 @@ fileInput.addEventListener("change", async (event) => {
   descricaoInput.value = "";
 });
 
-/* 🧱 UI */
+/* UI */
 function criarAviso(url, descricao, id) {
   const box = document.createElement("div");
   box.className = "img-box";
@@ -226,8 +209,7 @@ function criarAviso(url, descricao, id) {
   box.appendChild(img);
   box.appendChild(texto);
 
-  /* 🔐 BOTÃO APAGAR SÓ SE ESTIVER LOGADO */
-  if (userLogado) {
+  if (isAdmin) {
     const btn = document.createElement("button");
     btn.textContent = "🗑️";
     btn.className = "delete-btn";
@@ -243,13 +225,12 @@ function criarAviso(url, descricao, id) {
   grid.appendChild(box);
 }
 
-/* 🔍 MODAL */
+/* MODAL */
 function abrirImagem(src) {
   modal.style.display = "flex";
   document.getElementById("imgGrande").src = src;
 }
 
-/* clicar fora fecha */
 modal.addEventListener("click", (e) => {
   if (e.target === modal) fecharModal();
 });
@@ -258,7 +239,6 @@ function fecharModal() {
   modal.style.display = "none";
 }
 
-/* ESC fecha */
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") fecharModal();
 });
