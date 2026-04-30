@@ -123,7 +123,13 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 /* 👑 DEFINE ADMIN */
-const ADMIN_EMAIL = "picotopark@gmail.com";
+const ADMIN_EMAILS = [
+  "picotopark@gmail.com",
+  "rubenmoreira6666@gmail.com",
+  "aritarmachado4@gmail.com",
+  "outro@gmail.com",
+  "naosei@gmail.com"
+];
 let isAdmin = false;
 
 /* 📦 ELEMENTOS */
@@ -134,7 +140,7 @@ const addBtn = document.getElementById("addBtn");
 
 /* 🔐 VERIFICAR LOGIN */
 onAuthStateChanged(auth, (user) => {
-  if (user && user.email === ADMIN_EMAIL) {
+  if (user && ADMIN_EMAILS.includes(user.email)) {
     isAdmin = true;
   } else {
     isAdmin = false;
