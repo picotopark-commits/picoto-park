@@ -114,7 +114,7 @@ input[type="text"] {
 
 <br>
 
-<button class="add-btn" onclick="fileInput.click()">+ Adicionar</button>
+<button id="addBtn" class="add-btn" onclick="fileInput.click()">+ Adicionar</button>
 <input type="file" id="fileInput" hidden>
 
 <div id="grid"></div>
@@ -127,8 +127,15 @@ input[type="text"] {
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { 
+  getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc 
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+import { 
+  getAuth, onAuthStateChanged 
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+/* 🔑 CONFIG FIREBASE */
 const firebaseConfig = {
   apiKey: "AIzaSyB3IN8jxN7HZsN8ZyfHXlZBu5wxqTxgho8",
   authDomain: "picoto-park.firebaseapp.com",
@@ -140,7 +147,22 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 
+/* 🔐 CONTROLO DE LOGIN */
+let userLogado = false;
+
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    userLogado = true;
+    document.getElementById("addBtn").style.display = "inline-block";
+  } else {
+    userLogado = false;
+    document.getElementById("addBtn").style.display = "none";
+  }
+});
+
+/* ☁️ CLOUDINARY */
 const CLOUD_NAME = "dhocrzi6t";
 const UPLOAD_PRESET = "flutter_upload";
 
@@ -161,6 +183,8 @@ onSnapshot(collection(db, "avisos"), (snapshot) => {
 
 /* ➕ UPLOAD */
 fileInput.addEventListener("change", async (event) => {
+  if (!userLogado) return;
+
   const file = event.target.files[0];
   if (!file) return;
 
@@ -199,18 +223,23 @@ function criarAviso(url, descricao, id) {
   texto.className = "descricao";
   texto.textContent = descricao;
 
-  const btn = document.createElement("button");
-  btn.textContent = "🗑️"; // 🔥 corrigido
-  btn.className = "delete-btn";
-
-  btn.onclick = async (e) => {
-    e.stopPropagation();
-    await deleteDoc(doc(db, "avisos", id));
-  };
-
   box.appendChild(img);
   box.appendChild(texto);
-  box.appendChild(btn);
+
+  /* 🔐 BOTÃO APAGAR SÓ SE ESTIVER LOGADO */
+  if (userLogado) {
+    const btn = document.createElement("button");
+    btn.textContent = "🗑️";
+    btn.className = "delete-btn";
+
+    btn.onclick = async (e) => {
+      e.stopPropagation();
+      await deleteDoc(doc(db, "avisos", id));
+    };
+
+    box.appendChild(btn);
+  }
+
   grid.appendChild(box);
 }
 
@@ -220,7 +249,7 @@ function abrirImagem(src) {
   document.getElementById("imgGrande").src = src;
 }
 
-/* clicar fora fecha (CORRIGIDO) */
+/* clicar fora fecha */
 modal.addEventListener("click", (e) => {
   if (e.target === modal) fecharModal();
 });
