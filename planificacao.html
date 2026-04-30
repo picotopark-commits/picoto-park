@@ -88,7 +88,8 @@ body {
 
 <h2>Planificação</h2>
 
-<button class="add-btn" onclick="fileInput.click()">+ Adicionar</button>
+<!-- 🔥 ADICIONEI ID -->
+<button id="addBtn" class="add-btn" onclick="fileInput.click()">+ Adicionar</button>
 
 <input type="file" id="fileInput" hidden>
 
@@ -104,6 +105,9 @@ body {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+/* 🔐 AUTH */
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
 /* 🔑 CONFIG FIREBASE */
 const firebaseConfig = {
   apiKey: "AIzaSyB3IN8jxN7HZsN8ZyfHXlZBu5wxqTxgho8",
@@ -116,15 +120,37 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 
-/* ☁️ CLOUDINARY */
-const CLOUD_NAME = "dhocrzi6t";
-const UPLOAD_PRESET = "flutter_upload";
+/* 👑 DEFINE ADMIN */
+const ADMIN_EMAIL = "picotopark@gmail.com";
+let isAdmin = false;
 
 /* 📦 ELEMENTOS */
 const grid = document.getElementById("grid");
 const fileInput = document.getElementById("fileInput");
 const modal = document.getElementById("modal");
+const addBtn = document.getElementById("addBtn");
+
+/* 🔐 VERIFICAR LOGIN */
+onAuthStateChanged(auth, (user) => {
+  if (user && user.email === ADMIN_EMAIL) {
+    isAdmin = true;
+  } else {
+    isAdmin = false;
+  }
+
+  controlarUI();
+});
+
+/* 🎯 CONTROLAR UI */
+function controlarUI() {
+  if (!isAdmin) {
+    addBtn.style.display = "none";
+  } else {
+    addBtn.style.display = "inline-block";
+  }
+}
 
 /* 📡 TEMPO REAL */
 onSnapshot(collection(db, "imagens"), (snapshot) => {
@@ -138,15 +164,21 @@ onSnapshot(collection(db, "imagens"), (snapshot) => {
 
 /* ➕ UPLOAD */
 fileInput.addEventListener("change", async (event) => {
+
+  if (!isAdmin) {
+    alert("Sem permissão!");
+    return;
+  }
+
   const file = event.target.files[0];
   if (!file) return;
 
   const formData = new FormData();
   formData.append("file", file);
-  formData.append("upload_preset", UPLOAD_PRESET);
+  formData.append("upload_preset", "flutter_upload");
 
   const res = await fetch(
-    `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+    `https://api.cloudinary.com/v1_1/dhocrzi6t/image/upload`,
     { method: "POST", body: formData }
   );
 
@@ -167,17 +199,22 @@ function criarImagem(url, id) {
   img.src = url;
   img.onclick = () => abrirImagem(url);
 
-  const btn = document.createElement("button");
-  btn.innerHTML = "🗑️";
-  btn.className = "delete-btn";
-
-  btn.onclick = async (e) => {
-    e.stopPropagation();
-    await deleteDoc(doc(db, "imagens", id));
-  };
-
   box.appendChild(img);
-  box.appendChild(btn);
+
+  /* 🔥 BOTÃO SÓ PARA ADMIN */
+  if (isAdmin) {
+    const btn = document.createElement("button");
+    btn.innerHTML = "🗑️";
+    btn.className = "delete-btn";
+
+    btn.onclick = async (e) => {
+      e.stopPropagation();
+      await deleteDoc(doc(db, "imagens", id));
+    };
+
+    box.appendChild(btn);
+  }
+
   grid.appendChild(box);
 }
 
