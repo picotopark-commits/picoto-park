@@ -28,12 +28,58 @@ body {
   width: 100%;
   height: 200px;
   object-fit: cover;
+  cursor: pointer;
 }
 
 .delete-btn {
   position: absolute;
   top: 5px;
   right: 5px;
+}
+
+/* 🔥 BOTÃO BONITO */
+.add-btn {
+  padding: 12px 25px;
+  background: linear-gradient(45deg, #1976d2, #42a5f5);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  transition: 0.3s;
+}
+
+.add-btn:hover {
+  transform: scale(1.05);
+}
+
+/* 🔍 MODAL */
+#modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.9);
+  justify-content: center;
+  align-items: center;
+}
+
+#modal img {
+  max-width: 90%;
+  max-height: 90%;
+  border-radius: 10px;
+}
+
+#modal span {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  font-size: 30px;
+  cursor: pointer;
 }
 </style>
 </head>
@@ -42,17 +88,23 @@ body {
 
 <h2>Planificação</h2>
 
-<button onclick="fileInput.click()">Adicionar</button>
+<button class="add-btn" onclick="fileInput.click()">+ Adicionar</button>
+
 <input type="file" id="fileInput" hidden>
 
 <div id="grid"></div>
 
-<!-- 🔥 SCRIPT NO FINAL (IMPORTANTE) -->
+<!-- 🔍 MODAL -->
+<div id="modal">
+  <span onclick="fecharModal()">✖</span>
+  <img id="imgGrande" onclick="event.stopPropagation()">
+</div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* 🔑 CONFIG FIREBASE (METE O TEU REAL) */
+/* 🔑 CONFIG FIREBASE */
 const firebaseConfig = {
   apiKey: "AIzaSyB3IN8jxN7HZsN8ZyfHXlZBu5wxqTxgho8",
   authDomain: "picoto-park.firebaseapp.com",
@@ -69,9 +121,10 @@ const db = getFirestore(app);
 const CLOUD_NAME = "dhocrzi6t";
 const UPLOAD_PRESET = "flutter_upload";
 
-/* 📦 ELEMENTOS (AGORA JÁ EXISTEM) */
+/* 📦 ELEMENTOS */
 const grid = document.getElementById("grid");
 const fileInput = document.getElementById("fileInput");
+const modal = document.getElementById("modal");
 
 /* 📡 TEMPO REAL */
 onSnapshot(collection(db, "imagens"), (snapshot) => {
@@ -112,6 +165,7 @@ function criarImagem(url, id) {
 
   const img = document.createElement("img");
   img.src = url;
+  img.onclick = () => abrirImagem(url);
 
   const btn = document.createElement("button");
   btn.innerHTML = "🗑️";
@@ -126,6 +180,26 @@ function criarImagem(url, id) {
   box.appendChild(btn);
   grid.appendChild(box);
 }
+
+/* 🔍 MODAL FUNÇÕES */
+function abrirImagem(src) {
+  modal.style.display = "flex";
+  document.getElementById("imgGrande").src = src;
+}
+
+/* clicar fora fecha */
+modal.addEventListener("click", () => fecharModal());
+
+function fecharModal() {
+  modal.style.display = "none";
+}
+
+/* tecla ESC fecha */
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    fecharModal();
+  }
+});
 </script>
 
 </body>
