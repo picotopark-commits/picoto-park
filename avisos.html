@@ -1,160 +1,173 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Avisos ⚠️</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Avisos</title>
 
-  <style>
-    body {
-      font-family: 'Segoe UI', Arial;
-      background: transparent; /* 🔥 IMPORTANTE */
-      margin: 0;
-      color: white;
-    }
+<style>
+body {
+  font-family: Arial;
+  text-align: center;
+  padding: 20px;
+  margin: 0;
+  color: white;
+}
 
-    /* 🔥 HEADER TRANSPARENTE */
-    header {
-      background: rgba(0,0,0,0.4);
-      backdrop-filter: blur(10px);
-      padding: 15px;
-      font-size: 20px;
-      color: white;
-    }
+#grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+}
 
-    .container {
-      padding: 20px;
-    }
+.img-box {
+  position: relative;
+  background: rgba(0,0,0,0.5);
+  border-radius: 10px;
+  padding-bottom: 10px;
+}
 
-    /* 🔥 CARD TRANSPARENTE */
-    .card {
-      background: rgba(255,255,255,0.15);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
+.img-box img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  cursor: pointer;
+  border-radius: 10px 10px 0 0;
+}
 
-      margin: 15px 0;
-      padding: 15px;
-      border-radius: 12px;
+.descricao {
+  padding: 10px;
+  font-size: 14px;
+}
 
-      border: 1px solid rgba(255,255,255,0.2);
-      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    }
+.delete-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+}
 
-    img {
-      width: 100%;
-      border-radius: 10px;
-      margin-bottom: 10px;
-    }
+/* botão */
+.add-btn {
+  padding: 12px 25px;
+  background: linear-gradient(45deg, #1976d2, #42a5f5);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 10px;
+}
 
-    p {
-      margin: 0;
-    }
-
-    /* 🔥 BOTÃO FLOAT */
-    .fab {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background: orange;
-      border: none;
-      padding: 15px;
-      border-radius: 50%;
-      font-size: 20px;
-      cursor: pointer;
-      color: white;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.4);
-      transition: 0.3s;
-    }
-
-    .fab:hover {
-      transform: scale(1.1);
-      background: #ff9800;
-    }
-
-  </style>
+/* input */
+input[type="text"] {
+  padding: 10px;
+  width: 250px;
+  border-radius: 10px;
+  border: none;
+}
+</style>
 </head>
 
 <body>
 
-<header>Avisos ⚠️</header>
+<h2>Avisos</h2>
 
-<div class="container" id="avisos"></div>
+<!-- 🆕 DESCRIÇÃO -->
+<input type="text" id="descricaoInput" placeholder="Escreve uma descrição...">
 
-<button class="fab" onclick="abrirForm()">⚠️</button>
+<br>
 
-<!-- 🔥 FIREBASE MODULAR -->
+<button class="add-btn" onclick="fileInput.click()">+ Adicionar</button>
+<input type="file" id="fileInput" hidden>
+
+<div id="grid"></div>
+
 <script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
-
-// 🔥 CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyB3IN8jxN7HZsN8ZyfHXlZBu5wxqTxgho8",
   authDomain: "picoto-park.firebaseapp.com",
   projectId: "picoto-park",
   storageBucket: "picoto-park.firebasestorage.app",
   messagingSenderId: "984525425586",
-  appId: "1:984525425586:web:b7f3c6a8bffc392844f2ab",
-  measurementId: "G-NXNJ8JG5F2"
+  appId: "1:984525425586:web:b7f3c6a8bffc392844f2ab"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const storage = getStorage(app);
 
-// 📥 Adicionar aviso
-window.abrirForm = function () {
-  const descricao = prompt("Descrição do aviso:");
-  if (!descricao) return;
+const CLOUD_NAME = "dhocrzi6t";
+const UPLOAD_PRESET = "flutter_upload";
 
-  const input = document.createElement("input");
-  input.type = "file";
-  input.accept = "image/*";
+const grid = document.getElementById("grid");
+const fileInput = document.getElementById("fileInput");
+const descricaoInput = document.getElementById("descricaoInput");
 
-  input.onchange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+/* 🔄 TEMPO REAL */
+onSnapshot(collection(db, "avisos"), (snapshot) => {
+  grid.innerHTML = "";
 
-    const nome = Date.now() + ".jpg";
-    const storageRef = ref(storage, "avisos/" + nome);
-
-    await uploadBytes(storageRef, file);
-    const url = await getDownloadURL(storageRef);
-
-    await addDoc(collection(db, "avisos"), {
-      imagem: url,
-      descricao: descricao,
-      data: new Date()
-    });
-  };
-
-  input.click();
-};
-
-// 📡 Listar avisos
-const q = query(collection(db, "avisos"), orderBy("data", "desc"));
-
-onSnapshot(q, (snapshot) => {
-  const container = document.getElementById("avisos");
-  container.innerHTML = "";
-
-  snapshot.forEach((doc) => {
-    const data = doc.data();
-
-    const card = document.createElement("div");
-    card.className = "card";
-
-    card.innerHTML = `
-      <img src="${data.imagem}" />
-      <p>${data.descricao || ""}</p>
-    `;
-
-    container.appendChild(card);
+  snapshot.forEach(docSnap => {
+    const data = docSnap.data();
+    criarAviso(data.url, data.descricao, docSnap.id);
   });
 });
 
+/* ➕ UPLOAD */
+fileInput.addEventListener("change", async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const descricao = descricaoInput.value;
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", UPLOAD_PRESET);
+
+  const res = await fetch(
+    `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+    { method: "POST", body: formData }
+  );
+
+  const data = await res.json();
+
+  await addDoc(collection(db, "avisos"), {
+    url: data.secure_url,
+    descricao: descricao,
+    createdAt: Date.now()
+  });
+
+  descricaoInput.value = ""; // limpar input
+});
+
+/* 🧱 UI */
+function criarAviso(url, descricao, id) {
+  const box = document.createElement("div");
+  box.className = "img-box";
+
+  const img = document.createElement("img");
+  img.src = url;
+
+  const texto = document.createElement("div");
+  texto.className = "descricao";
+  texto.innerText = descricao;
+
+  const btn = document.createElement("button");
+  btn.innerHTML = "🗑️";
+  btn.className = "delete-btn";
+
+  btn.onclick = async (e) => {
+    e.stopPropagation();
+    await deleteDoc(doc(db, "avisos", id));
+  };
+
+  box.appendChild(img);
+  box.appendChild(texto);
+  box.appendChild(btn);
+  grid.appendChild(box);
+}
 </script>
 
 </body>
